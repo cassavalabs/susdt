@@ -4,21 +4,51 @@ pragma solidity ^0.8.19;
 
 interface IUSDT {
     /**
+     * @notice Emitted whenever a new token is been allowed on the vault
+     * @param currency the token address
+     */
+    event AllowCurrency(address indexed currency);
+
+    /**
+     * @notice Emitted whenever a user redeem SUSDT for any of the underlying stables
+     * @param currency the token redeemed
+     * @param account the account redeeming
+     * @param amount the value redeem
+     */
+    event Redeem(
+        address indexed currency,
+        address indexed account,
+        uint256 amount
+    );
+
+    /**
+     * @notice Emitted when an account is deny listed
+     * @param account the account deny listed
+     */
+    event DenyList(bytes32 indexed account);
+
+    /**
+     * @notice Emitted when an account is cleared from deny listed
+     * @param account the account
+     */
+    event UnDenyList(bytes32 indexed account);
+
+    /**
      * @notice allow bridge to accept local `currency` for bridging
      * `currency` is required to be a stable coin to ensure optimum bridging
      * @param currency address of token to accept
      */
-    function acceptCurrency(address currency) external;
+    function allowCurrency(address currency) external;
 
     /**
      * @notice useful for recovering native/local tokens sent to the router by mistake
      * @param currency address of token to withdraw
-     * @param receipient address of token receiver
+     * @param to address of token receiver
      * @param amount amount of token to withdraw
      */
     function recoverToken(
         address currency,
-        address receipient,
+        address to,
         uint256 amount
     ) external;
 
@@ -57,6 +87,24 @@ interface IUSDT {
     ) external;
 
     /**
+     * @dev allow redeeming value without previous approval in a single tx
+     * @param currency address of token to receive
+     * @param value amount to transfer
+     * @param deadline unix timestamp after which signature is invalid
+     * @param v v component of signature
+     * @param r r component of signature
+     * @param s s component of signature
+     */
+    function redeemWithAuthorization(
+        address currency,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external;
+
+    /**
      * @dev Block a malicious account from transacting with token
      * @param account the account to deny access
      */
@@ -67,6 +115,12 @@ interface IUSDT {
      * @param account the account to clear from deny list
      */
     function unDenyList(bytes32 account) external;
+
+    /**
+     * @dev Allow setting mintable chain limit
+     * @param amount the new limit amount
+     */
+    function updateChainLimit(uint256 amount) external;
 
     /**
      * @notice Check if an account is denied access
