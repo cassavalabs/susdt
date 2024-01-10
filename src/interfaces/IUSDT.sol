@@ -37,6 +37,26 @@ interface IUSDT {
     function redeem(address currency, uint256 amount) external;
 
     /**
+     * @dev allow transfering value without previous approval in a single tx
+     * @param from token owner account address
+     * @param to receipient of `value`
+     * @param value amount to transfer
+     * @param deadline unix timestamp after which signature is invalid
+     * @param v v component of signature
+     * @param r r component of signature
+     * @param s s component of signature
+     */
+    function transferWithAuthorization(
+        address from,
+        address to,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external;
+
+    /**
      * @dev Block a malicious account from transacting with token
      * @param account the account to deny access
      */
