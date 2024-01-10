@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.19;
 
-interface IUSDT {
+interface ISUSDT {
     /**
      * @notice Emitted whenever a new token is been allowed on the vault
      * @param currency the token address
@@ -89,6 +89,7 @@ interface IUSDT {
     /**
      * @dev allow redeeming value without previous approval in a single tx
      * @param currency address of token to receive
+     * @param from token owner account address
      * @param value amount to transfer
      * @param deadline unix timestamp after which signature is invalid
      * @param v v component of signature
@@ -97,6 +98,7 @@ interface IUSDT {
      */
     function redeemWithAuthorization(
         address currency,
+        address from,
         uint256 value,
         uint256 deadline,
         uint8 v,
@@ -121,6 +123,16 @@ interface IUSDT {
      * @param amount the new limit amount
      */
     function updateChainLimit(uint256 amount) external;
+
+    /**
+     * @dev Allow halting operations
+     */
+    function pause() external;
+
+    /**
+     * @dev Allow starting halted operations
+     */
+    function unpause() external;
 
     /**
      * @notice Check if an account is denied access
