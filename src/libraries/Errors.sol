@@ -23,4 +23,16 @@ library Errors {
 
     /// @notice Revert if the minting limit is reached on a chain
     error ChainLimitReached(uint256 limit);
+
+    /// @notice Revert when insufficient fee is provided
+    error InSufficientFee();
+
+    /// @notice Revert if not called by registered endpoint
+    error OnlyEndpoint(address endpoint);
+
+    /// @notice Revert when the endpoint router is invalid
+    error InvalidRouter();
+
+    /// @notice Thrown when the source address is not a trusted router contract
+    error UnAuthorizedRouter();
 }

@@ -205,4 +205,6 @@ contract SUSDT is ISUSDT, Authorization, ERC20, ERC20Permit, Pausable {
         currency.safeTransferERC20(account, amount);
         emit Redeem(currency, account, amount);
     }
+
+    receive() external payable virtual {}
 }
