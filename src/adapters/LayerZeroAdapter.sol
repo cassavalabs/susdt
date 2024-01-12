@@ -30,8 +30,6 @@ abstract contract LayerZeroAdapter is Authorization, ILayerZeroAdapter {
     uint8 internal constant WORKER_ID = 1;
     uint8 internal constant OPTION_TYPE_LZRECEIVE = 1;
     uint8 internal constant OPTION_TYPE_NATIVE_DROP = 2;
-    uint8 internal constant OPTION_TYPE_LZCOMPOSE = 3;
-    uint8 internal constant OPTION_TYPE_ORDERED_EXECUTION = 4;
 
     ILayerZeroEndpointV2 public immutable endpoint;
     LzState public lzState;
@@ -132,6 +130,10 @@ abstract contract LayerZeroAdapter is Authorization, ILayerZeroAdapter {
         return gasLimit;
     }
 
+    function _newOption() internal pure returns (bytes memory _option) {
+        _option = abi.encodePacked(TYPE_3);
+    }
+
     function _addExecutorOption(
         bytes memory _options,
         uint8 _optionType,
@@ -161,12 +163,11 @@ abstract contract LayerZeroAdapter is Authorization, ILayerZeroAdapter {
         uint8 _msgType,
         uint64 _value
     ) internal view returns (bytes memory _options) {
-        bytes memory newOption = abi.encodePacked(TYPE_3);
         bytes memory _option = _value == 0
             ? abi.encodePacked(_lzGasLookup(_dstEid, _msgType))
             : abi.encodePacked(_lzGasLookup(_dstEid, _msgType), _value);
         _options = _addExecutorOption(
-            newOption,
+            _newOption(),
             OPTION_TYPE_LZRECEIVE,
             _option
         );
@@ -208,6 +209,7 @@ abstract contract LayerZeroAdapter is Authorization, ILayerZeroAdapter {
         address lzToken = endpoint.lzToken();
 
         if (lzToken != address(0) && _fee.lzTokenFee > 0) {
+            /// use contract balance and charge user the equivalent native fee
             Currency.safeTransferFrom(
                 lzToken,
                 msg.sender,
@@ -229,18 +231,35 @@ abstract contract LayerZeroAdapter is Authorization, ILayerZeroAdapter {
         /// Ensure valid message fee
         _assertMessagingFee(_fee);
 
-        return
-            // solhint-disable-next-line check-send-result
-            endpoint.send{value: _fee.nativeFee}(
-                MessagingParams(
-                    _dstEid,
-                    _getEndpointRouter(_dstEid),
-                    _message,
-                    _options,
-                    _fee.lzTokenFee > 0
-                ),
-                _refundAddress
-            );
+        receipt = endpoint.send{value: _fee.nativeFee}(
+            MessagingParams(
+                _dstEid,
+                _getEndpointRouter(_dstEid),
+                _message,
+                _options,
+                _fee.lzTokenFee > 0
+            ),
+            _refundAddress
+        );
+
+        // if (receipt.guid == bytes32(0)) revert Errors.MsgSendingFailed();
+    }
+
+    function _airdrop(
+        address _refundAddress,
+        uint32 _dstEid,
+        bytes32 _receiver,
+        uint128 _amount
+    ) internal {
+        bytes memory _options = _addNativeDropOption(
+            _newOption(),
+            _amount,
+            _receiver
+        );
+        bytes memory _message = bytes("");
+        MessagingFee memory _fee = _quote(_dstEid, _message, _options, false);
+
+        _lzSend(_dstEid, _message, _options, _fee, _refundAddress);
     }
 
     function _lzReceive(

@@ -35,4 +35,7 @@ library Errors {
 
     /// @notice Thrown when the source address is not a trusted router contract
     error UnAuthorizedRouter();
+
+    /// @notice Thrown when dispatching remote call fails
+    error MsgSendingFailed();
 }
